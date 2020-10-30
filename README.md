@@ -1,6 +1,8 @@
 # VS-Saturn 3
 ## Software Engineering I Course Project
 
+A group project for the Software Engineering I course at the University of Massachusetts Lowell. The VS-Saturn 3 team is made up of five members who were assigned the task of creating an extension for Visual Studio Code, a free source-code editor. The idea of the extension stems from the Pomodoro Technique for time management.
+
 #### Updates
 
 **Version 0.1**
