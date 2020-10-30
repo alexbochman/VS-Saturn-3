@@ -4,7 +4,7 @@
 #### Updates
 
 **Version 0.1**
-You can check out the very basic exension on VS Code by:
+You can check out the very basic exension on VS Code by following the instructions below:
 1. Open extensions tab on VS Code
 2. Seach "UmlCs"
 3. Install
