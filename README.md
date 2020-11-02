@@ -1,12 +1,11 @@
 # VS-Saturn 3
 ## Software Engineering I Course Project
-
-A group project for the Software Engineering I course at the University of Massachusetts Lowell. The VS-Saturn 3 team is made up of five members who were assigned the task of creating an extension for Visual Studio Code, a free source-code editor. The idea of the extension stems from the Pomodoro Technique for time management.
+### Project Web Page: https://alexbochman.github.io/SWENG_Project/VS-Saturn-3.html
 
 #### Updates
 
 **Version 0.1**
-You can check out the very basic exension on VS Code by following the instructions below:
+You can check out the very basic extension on VS Code by:
 1. Open extensions tab on VS Code
 2. Seach "UmlCs"
 3. Install
