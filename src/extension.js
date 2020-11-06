@@ -28,4 +28,5 @@ exports.activate = activate;
 function deactivate() {
 	pomodoroTimer.dispose();
 }
+
 exports.deactivate = deactivate;

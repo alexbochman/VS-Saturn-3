@@ -153,9 +153,9 @@ class PomodoroTimer {
         if (!this.isStartable()) { return false; }
 
         if (userTheme == 'Default Light+')
-            vscode.workspace.getConfiguration('workbench').update('colorTheme', 'Default Dark+', true)
+            vscode.workspace.getConfiguration('workbench').update('colorTheme', 'Default Dark+', true);
         else
-            vscode.workspace.getConfiguration('workbench').update('colorTheme', 'Default Light+', true)
+            vscode.workspace.getConfiguration('workbench').update('colorTheme', 'Default Light+', true);
 
         let onTimeout = () => {
             vscode.workspace.getConfiguration('workbench').update('colorTheme', userTheme, true);
