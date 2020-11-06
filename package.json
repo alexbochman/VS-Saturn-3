@@ -1,24 +1,45 @@
 {
 	"name": "helloworld",
-	"displayName": "HelloWorld",
-	"description": "This is a test extension written in JavaScript for VSCode. All it'll probably do is print out Hello World. Cool, right? ",
-	"version": "0.0.1",
+	"displayName": "VS-Saturn 3: Pomodoro Technique",
+	"description": "Pomodoro Technique extension. Learn more at https://alexbochman.github.io/SWENG_Project/VS-Saturn-3.html#",
+	"version": "0.5.1",
 	"publisher": "UmlCs",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/alexbochman/VS-Saturn-3"
+	},
 	"engines": {
 		"vscode": "^1.50.0"
 	},
 	"categories": [
 		"Other"
 	],
-	"activationEvents": [
-		"onCommand:helloworld.helloWorld"
+	"keywords": [
+		"pomodoro",
+		"timer",
+		"productivity"
 	],
-	"main": "./extension.js",
+	"activationEvents": [
+		"onCommand:helloworld.startTimer"
+	],
+	"main": "./src/extension.js",
 	"contributes": {
+		"configuration": {
+			"type": "object",
+			"title": "Pomodoro",
+			"properties": {
+				"pomodoro.interval": {
+					"type": "int",
+					"default": 0.05,
+					"description": "The number of minutes in a Pomodoro"
+				}
+			}
+		},
 		"commands": [
 			{
-				"command": "helloworld.helloWorld",
-				"title": "What's Up World!"
+				"command": "helloworld.startTimer",
+				"title": "Start Pomodoro",
+				"category": "Pomodoro"
 			}
 		]
 	},
