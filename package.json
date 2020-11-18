@@ -32,6 +32,21 @@
 					"type": "int",
 					"default": 0.05,
 					"description": "The number of minutes in a Pomodoro"
+				},
+				"pomodoro.short_break_interval": {
+					"type": "int",
+					"default": 0.05,
+					"description": "The number of minutes in a short break"
+				},
+				"pomodoro.long_break_interval": {
+					"type": "int",
+					"default": 0.05,
+					"description": "The number of minutes in a long break"
+				},
+				"pomodoro.snooze_break_interval": {
+					"type": "int",
+					"default": 0.05,
+					"description": "The number of minutes after hitting snooze"
 				}
 			}
 		},

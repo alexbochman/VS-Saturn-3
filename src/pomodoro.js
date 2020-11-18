@@ -11,7 +11,7 @@ const DEFAULT_TIMER_DURATION = 25 * 60000;          // Number of minutes * one m
 const DEFAULT_SNOOZE_DURATION = 5 * 60000;          // Number of minutes * one minute in milliseconds
 const DEFAULT_BREAK_DURATION = 5 * 60000;           // Number of minutes * one minute in milliseconds
 const DEFAULT_LONG_BREAK_DURATION = 30 * 60000;     // Number of minutes * one minute in milliseconds
-const userTheme = vscode.workspace.getConfiguration('workbench').get('colorTheme');
+var userTheme = vscode.workspace.getConfiguration('workbench').get('colorTheme');
 let breaking = false;
 
 var TimerState = {
@@ -85,6 +85,7 @@ class PomodoroTimer {
         this.breakItem.show();
 
         this.updateStatusBar();
+        this.breakItem.text = "3 short breaks left";
     }
 
     updateStatusBar() {
@@ -104,8 +105,6 @@ class PomodoroTimer {
             this.resetButton.command = commands.SKIP_BREAK_CMD;
             this.timerItem.text = millisecondsToMMSS(this.millisecondsRemaining) + " (Taking a break)";
         }
-
-        this.breakItem.text = this.amountBreaks + " out of 4 breaks";
     }
 
     //command setting is done in the updateStatusBar function, no need to bring a command into this.
@@ -122,17 +121,22 @@ class PomodoroTimer {
     start() {
         if (!this.isStartable()) { return false; }
 
-        vscode.workspace.getConfiguration('workbench').update('colorTheme', userTheme, true);
+        if(vscode.workspace.getConfiguration('workbench').get('colorTheme') != userTheme) {
+            userTheme = vscode.workspace.getConfiguration('workbench').get('colorTheme');
+        }
 
         let onTimeout = () => {
             this.reset();
             breaking = true;
 
-            if (this.amountBreaks == 4)
-                this.millisecondsRemaining = DEFAULT_LONG_BREAK_DURATION;
-            else
-                this.millisecondsRemaining = DEFAULT_BREAK_DURATION;
-
+            //when the break duration is set you need to multiply the default second size and default millisecond size.
+            if (this.amountBreaks == 3){
+                var temp = vscode.workspace.getConfiguration("pomodoro").get("long_break_interval", DEFAULT_LONG_BREAK_DURATION);
+                this.millisecondsRemaining = temp != DEFAULT_LONG_BREAK_DURATION ? temp * SECONDS_IN_MINUTE * MILLISECONDS_IN_SECOND : temp;
+            } else {
+                var temp = vscode.workspace.getConfiguration("pomodoro").get("short_break_interval", DEFAULT_LONG_BREAK_DURATION);
+                this.millisecondsRemaining = temp != DEFAULT_BREAK_DURATION ? temp * SECONDS_IN_MINUTE * MILLISECONDS_IN_SECOND : temp;
+            }
             this.startBreak();
         };
 
@@ -152,19 +156,34 @@ class PomodoroTimer {
     startBreak() {
         if (!this.isStartable()) { return false; }
 
-        if (userTheme == 'Default Light+')
-            vscode.workspace.getConfiguration('workbench').update('colorTheme', 'Default Dark+', true);
-        else
-            vscode.workspace.getConfiguration('workbench').update('colorTheme', 'Default Light+', true);
+        if(this.amountBreaks < 3) {
+            this.breakItem.text = "on a short break";
+        } else {
+            this.breakItem.text = "on a long break";
+        }
+
+        userTheme = vscode.workspace.getConfiguration('workbench').get('colorTheme');
+        var themeValue = vscode.window.activeColorTheme.kind;
+        if (themeValue == 2 || themeValue == 3){
+            vscode.workspace.getConfiguration('workbench').update('colorTheme', 'Default Light+', true)
+        } else {
+            vscode.workspace.getConfiguration('workbench').update('colorTheme', 'Default Dark+', true)
+        }
 
         let onTimeout = () => {
             vscode.workspace.getConfiguration('workbench').update('colorTheme', userTheme, true);
 
-            if (this.amountBreaks >= 4)
-                this.amountBreaks = 0;
-            else
+            if(this.amountBreaks < 3){
                 this.amountBreaks++;
-
+                if(this.amountBreaks < 3){
+                    this.breakItem.text = (3 - this.amountBreaks) + " short breaks left";
+                } else {
+                    this.breakItem.text = "next break is a long break";
+                }
+            } else {
+                this.amountBreaks = 0;
+                this.breakItem.text = (3 - this.amountBreaks) + " short breaks left";
+            }
             this.reset();
             breaking = false;
             this.setState(TimerState.READY);
@@ -221,6 +240,12 @@ class PomodoroTimer {
     // will stop taking a break and add 5 minutes to the running timer.
     snoozeBreak() {
         this.stop();
+        if(this.amountBreaks < 3){
+            this.breakItem.text = (3 - this.amountBreaks) + " short breaks left";
+        } else {
+            this.breakItem.text = "next break is a long break";
+        }
+        vscode.workspace.getConfiguration('workbench').update('colorTheme', userTheme, true);
         this.millisecondsRemaining = DEFAULT_SNOOZE_DURATION;
         breaking = false;
         this.setState(TimerState.READY);
@@ -233,13 +258,19 @@ class PomodoroTimer {
     skipBreak() {
         this.reset();
         breaking = false;
+        vscode.workspace.getConfiguration('workbench').update('colorTheme', userTheme, true);
         this.setState(TimerState.READY);
-
-        if (this.amountBreaks >= 4)
-            this.amountBreaks = 0;
-        else
+        if(this.amountBreaks < 3){
             this.amountBreaks++;
-
+            if(this.amountBreaks < 3){
+                this.breakItem.text = (3 - this.amountBreaks) + " short breaks left";
+            } else {
+                this.breakItem.text = "next break is a long break";
+            }
+        } else {
+            this.amountBreaks = 0;
+            this.breakItem.text = (3 - this.amountBreaks) + " short breaks left";
+        }
         this.start();
         return true;
     }
