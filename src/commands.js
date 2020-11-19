@@ -12,3 +12,6 @@ exports.SNOOZE_BREAK_CMD = SNOOZE_BREAK_CMD;
 
 const SKIP_BREAK_CMD = "helloworld.skipBreak";
 exports.SKIP_BREAK_CMD = SKIP_BREAK_CMD;
+
+const TASKS_CMD = "helloworld.taskBar";
+exports.TASKS_CMD = TASKS_CMD;

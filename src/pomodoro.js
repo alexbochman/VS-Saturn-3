@@ -84,6 +84,9 @@ class PomodoroTimer {
         this.breakItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, Number.MIN_SAFE_INTEGER);
         this.breakItem.show();
 
+        this.taskItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, Number.MIN_SAFE_INTEGER);
+        this.taskItem.show();
+
         this.updateStatusBar();
         this.breakItem.text = "3 short breaks left";
     }
@@ -105,6 +108,9 @@ class PomodoroTimer {
             this.resetButton.command = commands.SKIP_BREAK_CMD;
             this.timerItem.text = millisecondsToMMSS(this.millisecondsRemaining) + " (Taking a break)";
         }
+
+        this.taskItem.text = "$(list-unordered)" +  " Tasks";
+        this.taskItem.command = commands.TASKS_CMD;
     }
 
     //command setting is done in the updateStatusBar function, no need to bring a command into this.
@@ -134,7 +140,7 @@ class PomodoroTimer {
                 var temp = vscode.workspace.getConfiguration("pomodoro").get("long_break_interval", DEFAULT_LONG_BREAK_DURATION);
                 this.millisecondsRemaining = temp != DEFAULT_LONG_BREAK_DURATION ? temp * SECONDS_IN_MINUTE * MILLISECONDS_IN_SECOND : temp;
             } else {
-                var temp = vscode.workspace.getConfiguration("pomodoro").get("short_break_interval", DEFAULT_LONG_BREAK_DURATION);
+                temp = vscode.workspace.getConfiguration("pomodoro").get("short_break_interval", DEFAULT_LONG_BREAK_DURATION);
                 this.millisecondsRemaining = temp != DEFAULT_BREAK_DURATION ? temp * SECONDS_IN_MINUTE * MILLISECONDS_IN_SECOND : temp;
             }
             this.startBreak();
@@ -284,6 +290,14 @@ class PomodoroTimer {
         this.state = TimerState.DISPOSED;
     }
 
-};
+    taskBar()
+    {
+        let openList = 'Open';
+        let myList = ["Test 1", "Test 2", "Test 3"]
+
+        vscode.window.showQuickPick(myList);
+    }
+
+}
 
 exports.PomodoroTimer = PomodoroTimer;

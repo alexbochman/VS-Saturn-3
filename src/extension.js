@@ -21,7 +21,11 @@ function activate(context) {
 		pomodoroTimer.skipBreak();
 	});
 
-	context.subscriptions.push([startTimer, pauseTimer, resetTimer, skipBreak, snoozeBreak]);
+	let taskBar = vscode.commands.registerCommand(commands.TASKS_CMD, () => {
+		pomodoroTimer.taskBar();
+	});
+
+	context.subscriptions.push([startTimer, pauseTimer, resetTimer, skipBreak, snoozeBreak, taskBar]);
 }
 exports.activate = activate;
 
