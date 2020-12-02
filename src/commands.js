@@ -15,3 +15,6 @@ exports.SKIP_BREAK_CMD = SKIP_BREAK_CMD;
 
 const TASKS_CMD = "helloworld.taskBar";
 exports.TASKS_CMD = TASKS_CMD;
+
+const COLLAPSIBLE_CMD = "helloworld.collapsible";
+exports.COLLAPSIBLE_CMD = COLLAPSIBLE_CMD;

@@ -13,6 +13,7 @@ const DEFAULT_BREAK_DURATION = 5 * 60000;           // Number of minutes * one m
 const DEFAULT_LONG_BREAK_DURATION = 30 * 60000;     // Number of minutes * one minute in milliseconds
 var userTheme = vscode.workspace.getConfiguration('workbench').get('colorTheme');
 let breaking = false;
+let collapsed = true;
 
 var TimerState = {
     UNKNOWN: 0,
@@ -72,26 +73,34 @@ class PomodoroTimer {
         this.state = TimerState.READY;
         this.amountBreaks = 0;
 
+        // On VSCode startup, collapsibleButton is the only item visible. Button toggles all other item's visibility
+        this.collapsibleButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, Number.MIN_SAFE_INTEGER);
+        this.collapsibleButton.show();
+
         this.startPauseButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, Number.MIN_SAFE_INTEGER);
-        this.startPauseButton.show();
+        this.startPauseButton.hide();
 
         this.resetButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, Number.MIN_SAFE_INTEGER);
-        this.resetButton.show();
+        this.resetButton.hide();
 
         this.timerItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, Number.MIN_SAFE_INTEGER);
-        this.timerItem.show();
+        this.timerItem.hide();
 
         this.breakItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, Number.MIN_SAFE_INTEGER);
-        this.breakItem.show();
+        this.breakItem.hide();
 
         this.taskItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, Number.MIN_SAFE_INTEGER);
-        this.taskItem.show();
+        this.taskItem.hide();
 
         this.updateStatusBar();
         this.breakItem.text = "3 short breaks left";
     }
 
     updateStatusBar() {
+
+        this.collapsibleButton.text = "[Pomodoro]";
+        this.collapsibleButton.command = commands.COLLAPSIBLE_CMD;
+
         // If timer is not on break
         if (breaking == false) {
             const icon = TimerState.RUNNING === this.state ? "$(debug-pause)" + "pause" : "$(triangle-right)" + "start";
@@ -160,21 +169,21 @@ class PomodoroTimer {
     }
 
     startBreak() {
-        if (!this.isStartable()) { return false; }
+        if (!this.isStartable())
+            return false;
 
-        if(this.amountBreaks < 3) {
+        if(this.amountBreaks < 3)
             this.breakItem.text = "on a short break";
-        } else {
+        else
             this.breakItem.text = "on a long break";
-        }
 
         userTheme = vscode.workspace.getConfiguration('workbench').get('colorTheme');
         var themeValue = vscode.window.activeColorTheme.kind;
-        if (themeValue == 2 || themeValue == 3){
+        if (themeValue == 2 || themeValue == 3)
             vscode.workspace.getConfiguration('workbench').update('colorTheme', 'Default Light+', true)
-        } else {
+        else
             vscode.workspace.getConfiguration('workbench').update('colorTheme', 'Default Dark+', true)
-        }
+
 
         let onTimeout = () => {
             vscode.workspace.getConfiguration('workbench').update('colorTheme', userTheme, true);
@@ -296,6 +305,26 @@ class PomodoroTimer {
         let myList = ["Test 1", "Test 2", "Test 3"]
 
         vscode.window.showQuickPick(myList);
+    }
+
+    // Function allows the collapsibleButton to toggle the visibility of
+    // the rest of the Pomodoro statusBar items.
+    collapsible() {
+        if(collapsed) {
+            this.startPauseButton.show();
+            this.resetButton.show();
+            this.timerItem.show();
+            this.breakItem.show();
+            this.taskItem.show();
+            collapsed = false;
+        } else {
+            this.startPauseButton.hide();
+            this.resetButton.hide();
+            this.timerItem.hide();
+            this.breakItem.hide();
+            this.taskItem.hide();
+            collapsed = true;
+        }
     }
 
 }

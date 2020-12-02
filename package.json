@@ -20,7 +20,7 @@
 		"productivity"
 	],
 	"activationEvents": [
-		"onCommand:helloworld.startTimer"
+		"*"
 	],
 	"main": "./src/extension.js",
 	"contributes": {
