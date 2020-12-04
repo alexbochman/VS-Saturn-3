@@ -15,8 +15,10 @@ var userTheme = vscode.workspace.getConfiguration('workbench').get('colorTheme')
 let breaking = false;
 let collapsed = true;
 
+var selection = "";
 let userInput = "input test"; // Input capture inside taskBar function
-let myList = ["Test 1", "Test 2", "Test 3"];
+let taskOptions = ["View Tasks", "Add Task", "Remove Task"];
+let taskList = [];
 
 var TimerState = {
     UNKNOWN: 0,
@@ -302,14 +304,44 @@ class PomodoroTimer {
         this.state = TimerState.DISPOSED;
     }
 
-    async taskBar()
-    {
-        vscode.window.showQuickPick(myList);
+    async showTaskOptions() {
+        await vscode.window.showQuickPick(taskOptions).then(result => {
+            if(result != null)
+                selection = result.toString();
+        });
+    }
 
-        // USER INPUT CAPTURE WORKS
-        // userInput = await vscode.window.showInputBox();
-        // vscode.window.showInformationMessage(input);
-        // console.log("USER INPUT: " + userInput);
+    async taskBar() {
+
+        await this.showTaskOptions();
+
+        if(selection == "View Tasks")
+            vscode.window.showQuickPick(taskList);
+
+        else if(selection == "Add Task") {
+            userInput = await vscode.window.showInputBox();
+            taskList.push(userInput);
+
+            //await this.showTaskOptions();
+
+        } else if(selection == "Remove Task") {
+            await vscode.window.showQuickPick(taskList).then(result => {
+            if(result != null)
+                selection = result.toString();
+            });
+
+            var i = 0;
+            while(taskList[i] != selection)
+                i++;
+            taskList.splice(i, 1);
+
+            //await this.showTaskOptions();
+        }
+
+    }
+
+    async addTask() {
+
     }
 
     // Function allows the collapsibleButton to toggle the visibility of
