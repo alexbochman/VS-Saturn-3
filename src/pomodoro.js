@@ -14,7 +14,9 @@ const DEFAULT_LONG_BREAK_DURATION = 30 * 60000;     // Number of minutes * one m
 var userTheme = vscode.workspace.getConfiguration('workbench').get('colorTheme');
 let breaking = false;
 let collapsed = true;
-let input = "input test";
+
+let userInput = "input test"; // Input capture inside taskBar function
+let myList = ["Test 1", "Test 2", "Test 3"];
 
 var TimerState = {
     UNKNOWN: 0,
@@ -302,14 +304,12 @@ class PomodoroTimer {
 
     async taskBar()
     {
-        let openList = 'Open';
-        let myList = ["Test 1", "Test 2", "Test 3"]
+        vscode.window.showQuickPick(myList);
 
-        //vscode.window.showQuickPick(myList);
-
-        input = await vscode.window.showInputBox();
-        vscode.window.showInformationMessage(input);
-
+        // USER INPUT CAPTURE WORKS
+        // userInput = await vscode.window.showInputBox();
+        // vscode.window.showInformationMessage(input);
+        // console.log("USER INPUT: " + userInput);
     }
 
     // Function allows the collapsibleButton to toggle the visibility of
@@ -331,8 +331,9 @@ class PomodoroTimer {
             collapsed = true;
         }
 
-        console.log(input);
-        vscode.window.showInformationMessage(input);
+        console.log("USER INPUT: " + userInput);
+        vscode.window.showInformationMessage("USER INPUT: " + userInput);
+
     }
 }
 

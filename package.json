@@ -20,29 +20,10 @@
 		"productivity"
 	],
 	"activationEvents": [
-		"*", "onView:taskList"
+		"*"
 	],
 	"main": "./src/extension.js",
 	"contributes": {
-	"viewsContainers": {
-            "activitybar": [
-                {
-                    "id": "task-list",
-                    "title": "Task List",
-                    "icon": "./taskListIcon.svg"
-                }
-            ]
-        },
-        "views": {
-            "task-list": [
-              {
-                "id": "taskList",
-                "name": "Task List",
-                "icon": "./taskListIcon.svg",
-                "contextualTitle": "Task List"
-              }
-            ]
-          },
 		"configuration": {
 			"type": "object",
 			"title": "Pomodoro",
