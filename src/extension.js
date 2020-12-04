@@ -1,3 +1,4 @@
+//extension.js
 const vscode = require('vscode');
 const pomodoro = require('./pomodoro');
 const commands = require('./commands');
