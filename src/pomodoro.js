@@ -7,18 +7,23 @@ const { workspace, ConfigurationTarget } = require('vscode')
 // Global Variables =======================================================================================
 const MILLISECONDS_IN_SECOND = 1000;
 const SECONDS_IN_MINUTE = 60;
-const DEFAULT_TIMER_DURATION = 25 * 60000;          // Number of minutes * one minute in milliseconds | set to 3 seconds (in package.json) until version 1.0.0 release for testing
 const DEFAULT_SNOOZE_DURATION = 5 * 60000;          // Number of minutes * one minute in milliseconds
-const DEFAULT_BREAK_DURATION = 5 * 60000;           // Number of minutes * one minute in milliseconds
-const DEFAULT_LONG_BREAK_DURATION = 30 * 60000;     // Number of minutes * one minute in milliseconds
+var DEFAULT_TIMER_DURATION = 25 * 60000;            // Number of minutes * one minute in milliseconds | set to 3 seconds (in package.json) until version 1.0.0 release for testing
+var DEFAULT_BREAK_DURATION = 5 * 60000;             // Number of minutes * one minute in milliseconds
+var DEFAULT_LONG_BREAK_DURATION = 30 * 60000;       // Number of minutes * one minute in milliseconds
 var userTheme = vscode.workspace.getConfiguration('workbench').get('colorTheme');
 let breaking = false;
 let collapsed = true;
 
 var selection = "";
 let userInput = "input test"; // Input capture inside taskBar function
-let taskOptions = ["View Tasks", "Add Task", "Remove Task"];
-let taskList = [];
+let taskOptions = ["View Tasks", "Add Task", "Remove Task", "Completed Tasks", "Close Menu"];
+let taskList = ["[BACK]"];
+let completedList = ["[BACK]"];
+let optionList = ["Set Short Break Time Duration", "Set Long Break Time Duration", "Set Pomodoro Time Duration", "Close Menu"];
+let shortBreakOpt = ["[BACK]", "0.05 Minutes", "3 Minutes", "5 Minutes", "10 Minutes"];
+let longBreakOpt = ["[BACK]", "0.05 Minutes", "25 Minutes", "30 Minutes", "45 Minutes", "1 Hour"];
+let pomoTimeOpt = ["[BACK]", "0.05 Minutes", "20 Minutes", "30 Minutes", "40 Minutes"];
 
 var TimerState = {
     UNKNOWN: 0,
@@ -70,7 +75,7 @@ class PomodoroTimer {
 
     constructor(interval = DEFAULT_TIMER_DURATION) {
 
-        this.interval = interval === DEFAULT_TIMER_DURATION ? vscode.workspace.getConfiguration("pomodoro").get("interval", DEFAULT_TIMER_DURATION) * MILLISECONDS_IN_SECOND * SECONDS_IN_MINUTE : interval;
+        this.interval = DEFAULT_TIMER_DURATION;
         this.millisecondsRemaining = this.interval;
         this.timeout = 0;
         this.endDate = new Date();
@@ -97,6 +102,9 @@ class PomodoroTimer {
         this.taskItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, Number.MIN_SAFE_INTEGER);
         this.taskItem.hide();
 
+        this.optionsButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, Number.MIN_SAFE_INTEGER);
+        this.optionsButton.hide();
+
         this.updateStatusBar();
         this.breakItem.text = "3 short breaks left";
     }
@@ -105,6 +113,9 @@ class PomodoroTimer {
 
         this.collapsibleButton.text = "[Pomodoro]";
         this.collapsibleButton.command = commands.COLLAPSIBLE_CMD;
+
+        this.optionsButton.text = "$(settings-gear)" + " Options";
+        this.optionsButton.command = commands.OPTIONS_CMD;
 
         // If timer is not on break
         if (breaking == false) {
@@ -311,43 +322,154 @@ class PomodoroTimer {
         });
     }
 
+    async showTaskList() {
+        await vscode.window.showQuickPick(taskList).then(result => {
+            if(result != null)
+                selection = result.toString();
+        });
+    }
+
     async taskBar() {
 
         await this.showTaskOptions();
 
-        if(selection == "View Tasks")
-            vscode.window.showQuickPick(taskList);
+        if(selection == "Close Menu")
+            return;
 
+        if(selection == "View Tasks") {
+            await vscode.window.showQuickPick(taskList).then(result => {
+                if(result != null)
+                    selection = result.toString();
+            });
+            if(selection == "[BACK]")
+                this.taskBar();
+        }
         else if(selection == "Add Task") {
             userInput = await vscode.window.showInputBox();
-            taskList.push(userInput);
 
-            //await this.showTaskOptions();
+            if(userInput != null)
+                taskList.push(userInput);
+            this.taskBar();
 
-        } else if(selection == "Remove Task") {
+        }
+        else if(selection == "Remove Task") {
             await vscode.window.showQuickPick(taskList).then(result => {
             if(result != null)
                 selection = result.toString();
             });
 
-            var i = 0;
-            while(taskList[i] != selection)
-                i++;
-            taskList.splice(i, 1);
-
-            //await this.showTaskOptions();
+            if(selection == "[BACK]")
+                this.taskBar();
+            else{
+                var i = 0;
+                while(taskList[i] != selection)
+                    i++;
+                completedList.push(taskList[i]);
+                taskList.splice(i, 1);
+                this.taskBar();
+            }
         }
+        else if(selection == "Completed Tasks") {
+            await vscode.window.showQuickPick(completedList).then(result => {
+                if(result != null)
+                    selection = result.toString();
+            });
 
+            if(selection == "[BACK]")
+                this.taskBar();
+        }
     }
 
-    async addTask() {
+    async options()
+    {
+        await vscode.window.showQuickPick(optionList).then(result => {
+            if(result != null)
+                selection = result.toString();
+        });
 
+        if(selection == "Close Menu")
+            return;
+
+        if(selection == "Set Short Break Time Duration")
+        {
+            await vscode.window.showQuickPick(shortBreakOpt).then(result => {
+                if(result != null)
+                    selection = result.toString();
+            });
+
+            if(selection == "[BACK]")
+                this.options();
+            else if(selection == "0.05 Minutes")
+                DEFAULT_BREAK_DURATION = 0.05 * 60000;
+            else if(selection == "3 Minutes")
+                DEFAULT_BREAK_DURATION = 3 * 60000;
+            else if(selection == "5 Minutes")
+                DEFAULT_BREAK_DURATION = 5 * 60000;
+            else if(selection == "10 Minutes")
+                DEFAULT_BREAK_DURATION = 10 * 60000;
+
+            this.options();
+            return;
+        }
+
+        if(selection == "Set Long Break Time Duration")
+        {
+            await vscode.window.showQuickPick(longBreakOpt).then(result => {
+                if(result != null)
+                    selection = result.toString();
+            });
+
+            if(selection == "[BACK]")
+                this.options();
+            else if(selection == "0.05 Minutes")
+                DEFAULT_LONG_BREAK_DURATION = 0.05 * 60000;
+            else if(selection == "25 Minutes")
+                DEFAULT_LONG_BREAK_DURATION = 25 * 60000;
+            else if(selection == "30 Minutes")
+                DEFAULT_LONG_BREAK_DURATION = 30 * 60000;
+            else if(selection == "45 Minutes")
+                DEFAULT_LONG_BREAK_DURATION = 45 * 60000;
+            else if(selection == "1 Hour")
+                DEFAULT_LONG_BREAK_DURATION = 60 * 60000;
+
+            this.options();
+            return;
+        }
+
+        if(selection == "Set Pomodoro Time Duration")
+        {
+            await vscode.window.showQuickPick(pomoTimeOpt).then(result => {
+                if(result != null)
+                    selection = result.toString();
+            });
+
+            if(selection == "[BACK]") {
+                this.options();
+                return;
+            }
+
+            if(selection == "0.05 Minutes")
+                this.interval = 0.05 * 60000;
+            else if(selection == "20 Minutes")
+                this.interval = 20 * 60000;
+            else if(selection == "30 Minutes")
+                this.interval = 30 * 60000;
+            else if(selection == "40 Minutes")
+                this.interval = 40 * 60000;
+            else if(selection == "1 Hour")
+                this.interval = 60 * 60000;
+
+            this.reset();
+            this.options();
+            return;
+        }
     }
 
     // Function allows the collapsibleButton to toggle the visibility of
     // the rest of the Pomodoro statusBar items.
     collapsible() {
         if(collapsed) {
+            this.optionsButton.show();
             this.startPauseButton.show();
             this.resetButton.show();
             this.timerItem.show();
@@ -355,6 +477,7 @@ class PomodoroTimer {
             this.taskItem.show();
             collapsed = false;
         } else {
+            this.optionsButton.hide();
             this.startPauseButton.hide();
             this.resetButton.hide();
             this.timerItem.hide();
@@ -362,10 +485,6 @@ class PomodoroTimer {
             this.taskItem.hide();
             collapsed = true;
         }
-
-        console.log("USER INPUT: " + userInput);
-        vscode.window.showInformationMessage("USER INPUT: " + userInput);
-
     }
 }
 

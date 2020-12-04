@@ -29,7 +29,11 @@ function activate(context) {
 		pomodoroTimer.collapsible();
 	});
 
-	context.subscriptions.push([startTimer, pauseTimer, resetTimer, skipBreak, snoozeBreak, taskBar, collapsible]);
+	let options = vscode.commands.registerCommand(commands.OPTIONS_CMD, () => {
+		pomodoroTimer.options();
+	});
+
+	context.subscriptions.push([startTimer, pauseTimer, resetTimer, skipBreak, snoozeBreak, taskBar, collapsible, options]);
 }
 exports.activate = activate;
 

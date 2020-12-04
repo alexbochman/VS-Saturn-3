@@ -18,3 +18,6 @@ exports.TASKS_CMD = TASKS_CMD;
 
 const COLLAPSIBLE_CMD = "helloworld.collapsible";
 exports.COLLAPSIBLE_CMD = COLLAPSIBLE_CMD;
+
+const OPTIONS_CMD = "helloworld.options";
+exports.OPTIONS_CMD = OPTIONS_CMD;
