@@ -1,39 +1,23 @@
-
-// Required         =======================================================================================
 const vscode = require('vscode');
 const commands = require('./commands');
 const { workspace, ConfigurationTarget } = require('vscode')
-
-// Global Variables =======================================================================================
-const MILLISECONDS_IN_SECOND = 1000;
+const MILLISECONDS_IN_SECOND = 100;
 const SECONDS_IN_MINUTE = 60;
-const DEFAULT_SNOOZE_DURATION = 5 * 60000;          // Number of minutes * one minute in milliseconds
-var DEFAULT_TIMER_DURATION = 25 * 60000;            // Number of minutes * one minute in milliseconds | set to 3 seconds (in package.json) until version 1.0.0 release for testing
-var DEFAULT_BREAK_DURATION = 5 * 60000;             // Number of minutes * one minute in milliseconds
-var DEFAULT_LONG_BREAK_DURATION = 30 * 60000;       // Number of minutes * one minute in milliseconds
-var userTheme = vscode.workspace.getConfiguration('workbench').get('colorTheme');
+const DEFAULT_TIMER_DURATION = 5000; // 25 minutes in milliseconds
+const userTheme = vscode.workspace.getConfiguration('workbench').get('colorTheme');
 let breaking = false;
-let collapsed = true;
-
-var selection = "";
-let userInput = "input test"; // Input capture inside taskBar function
-let taskOptions = ["View Tasks", "Add Task", "Remove Task", "Completed Tasks", "Close Menu"];
-let taskList = ["[BACK]"];
-let completedList = ["[BACK]"];
-let optionList = ["Set Short Break Time Duration", "Set Long Break Time Duration", "Set Pomodoro Time Duration", "Close Menu"];
-let shortBreakOpt = ["[BACK]", "0.05 Minutes", "3 Minutes", "5 Minutes", "10 Minutes"];
-let longBreakOpt = ["[BACK]", "0.05 Minutes", "25 Minutes", "30 Minutes", "45 Minutes", "1 Hour"];
-let pomoTimeOpt = ["[BACK]", "0.05 Minutes", "20 Minutes", "30 Minutes", "40 Minutes"];
-
+// TODO: might want to put state data/logic into its own class
 var TimerState = {
     UNKNOWN: 0,
     READY: 1,
     RUNNING: 2,
     PAUSED: 3,
     FINISHED: 4,
-    DISPOSED: 5
+    DISPOSED: 5,
+    WEED: 420,
+    NICE: 69,
+    HAHA: 42069
 }
-
 exports.TimerState = TimerState;
 
 const STARTABLE_STATES = new Set([TimerState.FINISHED, TimerState.READY, TimerState.PAUSED]);
@@ -49,129 +33,122 @@ const ALL_STATES = new Set([TimerState.UNKNOWN, TimerState.READY, TimerState.RUN
 exports.ALL_STATES = ALL_STATES;
 
 function stateToString(state) {
-    switch (state) {
-        case TimerState.UNKNOWN:    return "unknown";
-        case TimerState.READY:      return "Ready";
-        case TimerState.RUNNING:    return "Running";
-        case TimerState.PAUSED:     return "Paused";
-        case TimerState.FINISHED:   return "Finished";
-        case TimerState.DISPOSED:   return "disposed";
-        default:                    return "unknown";
+    switch(state) {
+        case TimerState.UNKNOWN:
+            return "unknown";
+        case TimerState.READY:
+            return "ready";
+        case TimerState.RUNNING:
+            return "running";
+        case TimerState.PAUSED:
+            return "paused";
+        case TimerState.FINISHED:
+            return "finished";
+        case TimerState.DISPOSED:
+            return "disposed";
+        default:
+            return "unknown";
     }
 }
 
-function millisecondsToMMSS(milliseconds) {
+function millisecondsToMMSS (milliseconds) {
     let totalSeconds = Math.round(milliseconds / MILLISECONDS_IN_SECOND);
     let minutes = Math.floor(totalSeconds / SECONDS_IN_MINUTE);
     let seconds = Math.floor(totalSeconds - (minutes * SECONDS_IN_MINUTE));
 
-    if (minutes < 10) { minutes = "0" + minutes; }
-    if (seconds < 10) { seconds = "0" + seconds; }
+    if (minutes < 10) {minutes = "0" + minutes; }
+    if (seconds < 10) {seconds = "0" + seconds; }
 
     return minutes + ':' + seconds;
 }
 
 class PomodoroTimer {
-
-    constructor(interval = DEFAULT_TIMER_DURATION) {
-
-        this.interval = DEFAULT_TIMER_DURATION;
+    constructor(interval=DEFAULT_TIMER_DURATION) {
+        this.name = "Pomodoro";
+        this.interval = interval === DEFAULT_TIMER_DURATION ? vscode.workspace.getConfiguration("pomodoro").get("interval", DEFAULT_TIMER_DURATION) * MILLISECONDS_IN_SECOND * SECONDS_IN_MINUTE : interval;
+        this.breakInterval = 10000;
         this.millisecondsRemaining = this.interval;
         this.timeout = 0;
         this.endDate = new Date();
         this.secondInterval = 0;
         this.state = TimerState.READY;
-        this.amountBreaks = 0;
-
-        // On VSCode startup, collapsibleButton is the only item visible. Button toggles all other item's visibility
-        this.collapsibleButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, Number.MIN_SAFE_INTEGER);
-        this.collapsibleButton.show();
-
         this.startPauseButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, Number.MIN_SAFE_INTEGER);
-        this.startPauseButton.hide();
+        this.startPauseButton.command = commands.START_TIMER_CMD;
+        this.startPauseButton.show();
 
         this.resetButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, Number.MIN_SAFE_INTEGER);
-        this.resetButton.hide();
+        this.resetButton.command = commands.RESET_TIMER_CMD;
+        this.resetButton.show();
 
         this.timerItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, Number.MIN_SAFE_INTEGER);
-        this.timerItem.hide();
+        this.timerItem.show();
 
-        this.breakItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, Number.MIN_SAFE_INTEGER);
-        this.breakItem.hide();
+        /*this.snoozeButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, Number.startPauseButton.number());
+        this.snoozeButton.command = commands.SNOOZE_BREAK_CMD;
+        this.snoozeButton.show();
 
-        this.taskItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, Number.MIN_SAFE_INTEGER);
-        this.taskItem.hide();
-
-        this.optionsButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, Number.MIN_SAFE_INTEGER);
-        this.optionsButton.hide();
-
+        this.skipButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, Number.Number.resetButton.number());
+        this.skipButton.command = commands.SKIP_BREAK_CMD;
+        this.skipButton.show();*/
+        //this.breaking = false;
         this.updateStatusBar();
-        this.breakItem.text = "3 short breaks left";
     }
 
     updateStatusBar() {
-
-        this.collapsibleButton.text = "[Pomodoro]";
-        this.collapsibleButton.command = commands.COLLAPSIBLE_CMD;
-
-        this.optionsButton.text = "$(settings-gear)" + " Options";
-        this.optionsButton.command = commands.OPTIONS_CMD;
-
-        // If timer is not on break
-        if (breaking == false) {
-            const icon = TimerState.RUNNING === this.state ? "$(debug-pause)" + "pause" : "$(triangle-right)" + "start";
+        if(breaking == false){
+            const icon = TimerState.RUNNING === this.state ? "$(primitive-square)" + "Pause" : "$(triangle-right)" + "Start";
             this.startPauseButton.text = icon;
-            this.startPauseButton.command = TimerState.RUNNING === this.state ? commands.PAUSE_TIMER_CMD : commands.START_TIMER_CMD;
-            this.resetButton.text = "$(clock)" + " Reset";
             this.resetButton.command = commands.RESET_TIMER_CMD;
+            this.resetButton.text = "$(clock)" + "Reset";
             this.timerItem.text = millisecondsToMMSS(this.millisecondsRemaining) + " (" + stateToString(this.state) + ")";
-        // otherwise, timer is on break
         } else {
-            this.startPauseButton.text = "$(watch)" + "snooze";
             this.startPauseButton.command = commands.SNOOZE_BREAK_CMD;
-            this.resetButton.text = this.resetButton.text = "$(run-all)" + "Skip";
-            this.resetButton.command = commands.SKIP_BREAK_CMD;
-            this.timerItem.text = millisecondsToMMSS(this.millisecondsRemaining) + " (Taking a break)";
+            this.startPauseButton.text = "$(watch)" + "Snooze";
+            this.startPauseButton.command = commands.SKIP_BREAK_CMD;
+            this.resetButton.text = "$(run-all)" + "Skip";
+            this.timerItem.text = millisecondsToMMSS(this.millisecondsRemaining) + " (" + stateToString(this.state) + ")";
         }
-
-        this.taskItem.text = "$(list-unordered)" +  " Tasks";
-        this.taskItem.command = commands.TASKS_CMD;
     }
 
-    //command setting is done in the updateStatusBar function, no need to bring a command into this.
-    setState(state) {
+    setState(state, statusBarCommand) {
         this.state = state;
+        this.startPauseButton.command = statusBarCommand;
         this.updateStatusBar();
     }
 
     isStartable() { return STARTABLE_STATES.has(this.state); }
+
     isPauseable() { return PAUSEABLE_STATES.has(this.state); }
+
     isStoppable() { return STOPPABLE_STATES.has(this.state); }
 
     // starts/resumes the timer but does not reset it
     start() {
         if (!this.isStartable()) { return false; }
 
-        if(vscode.workspace.getConfiguration('workbench').get('colorTheme') != userTheme) {
-            userTheme = vscode.workspace.getConfiguration('workbench').get('colorTheme');
-        }
-
         let onTimeout = () => {
-            this.reset();
-            breaking = true;
-
-            //when the break duration is set you need to multiply the default second size and default millisecond size.
-            if (this.amountBreaks == 3){
-                var temp = vscode.workspace.getConfiguration("pomodoro").get("long_break_interval", DEFAULT_LONG_BREAK_DURATION);
-                this.millisecondsRemaining = temp != DEFAULT_LONG_BREAK_DURATION ? temp * SECONDS_IN_MINUTE * MILLISECONDS_IN_SECOND : temp;
+            this.reset();   
+            if (userTheme == 'Default Light+'){
+                vscode.workspace.getConfiguration('workbench').update('colorTheme', 'Default Dark+')
             } else {
-                temp = vscode.workspace.getConfiguration("pomodoro").get("short_break_interval", DEFAULT_LONG_BREAK_DURATION);
-                this.millisecondsRemaining = temp != DEFAULT_BREAK_DURATION ? temp * SECONDS_IN_MINUTE * MILLISECONDS_IN_SECOND : temp;
+                vscode.workspace.getConfiguration('workbench').update('colorTheme', 'Default Light+')
             }
+            // vscode.window.showInformationMessage("Pomodoro has expired. Enjoy your break!", "Restart")
+            //     .then((value) => {
+            //         if ('Restart' === value) {
+            //             this.reset();
+            //             this.start();
+            //             vscode.workspace.getConfiguration('workbench').update('colorTheme', userTheme)
+            //         }
+            //         else {
+            //             vscode.workspace.getConfiguration('workbench').update('colorTheme', userTheme)                 
+            //         }
+            //     }); 
+            breaking = true;
             this.startBreak();
         };
 
-        let onSecondElapsed = () => {
+        let onSecondElapsed = () => { 
             this.millisecondsRemaining -= MILLISECONDS_IN_SECOND;
             this.updateStatusBar();
         };
@@ -179,48 +156,23 @@ class PomodoroTimer {
         this.endDate = new Date(Date.now().valueOf() + this.millisecondsRemaining);
         this.timeout = setTimeout(onTimeout, this.millisecondsRemaining);
         this.secondInterval = setInterval(onSecondElapsed, MILLISECONDS_IN_SECOND);
-        this.setState(TimerState.RUNNING);
+        this.setState(TimerState.RUNNING, commands.PAUSE_TIMER_CMD);
 
         return true;
     }
 
     startBreak() {
-        if (!this.isStartable())
-            return false;
-
-        if(this.amountBreaks < 3)
-            this.breakItem.text = "on a short break";
-        else
-            this.breakItem.text = "on a long break";
-
-        userTheme = vscode.workspace.getConfiguration('workbench').get('colorTheme');
-        var themeValue = vscode.window.activeColorTheme.kind;
-        if (themeValue == 2 || themeValue == 3)
-            vscode.workspace.getConfiguration('workbench').update('colorTheme', 'Default Light+', true)
-        else
-            vscode.workspace.getConfiguration('workbench').update('colorTheme', 'Default Dark+', true)
-
+        if (!this.isStartable()) { return false; }
 
         let onTimeout = () => {
-            vscode.workspace.getConfiguration('workbench').update('colorTheme', userTheme, true);
-
-            if(this.amountBreaks < 3){
-                this.amountBreaks++;
-                if(this.amountBreaks < 3){
-                    this.breakItem.text = (3 - this.amountBreaks) + " short breaks left";
-                } else {
-                    this.breakItem.text = "next break is a long break";
-                }
-            } else {
-                this.amountBreaks = 0;
-                this.breakItem.text = (3 - this.amountBreaks) + " short breaks left";
-            }
-            this.reset();
-            breaking = false;
-            this.setState(TimerState.READY);
+                vscode.workspace.getConfiguration('workbench').update('colorTheme', userTheme);
+                this.reset();
+                this.start();
+                this.breaking=false;   
+                this.start();        
         };
 
-        let onSecondElapsed = () => {
+        let onSecondElapsed = () => { 
             this.millisecondsRemaining -= MILLISECONDS_IN_SECOND;
             this.updateStatusBar();
         };
@@ -228,7 +180,7 @@ class PomodoroTimer {
         this.endDate = new Date(Date.now().valueOf() + this.millisecondsRemaining);
         this.timeout = setTimeout(onTimeout, this.millisecondsRemaining);
         this.secondInterval = setInterval(onSecondElapsed, MILLISECONDS_IN_SECOND);
-        this.setState(TimerState.RUNNING);
+        this.setState(TimerState.RUNNING, commands.SNOOZE_BREAK_CMD);
 
         return true;
     }
@@ -239,7 +191,8 @@ class PomodoroTimer {
 
         clearTimeout(this.timeout);
         clearInterval(this.secondInterval);
-        this.setState(TimerState.PAUSED);
+
+        this.setState(TimerState.PAUSED, commands.START_TIMER_CMD);
 
         return true;
     }
@@ -254,7 +207,8 @@ class PomodoroTimer {
         this.timeout = 0;
         this.secondInterval = 0;
         this.millisecondsRemaining = 0;
-        this.setState(TimerState.FINISHED);
+        this.setState(TimerState.FINISHED, commands.START_TIMER_CMD);
+        this.millisecondsRemaining = this.interval;
 
         return true;
     }
@@ -263,46 +217,43 @@ class PomodoroTimer {
     reset() {
         this.stop();
         this.millisecondsRemaining = this.interval;
-        this.setState(TimerState.READY);
+        this.setState(TimerState.READY, commands.START_TIMER_CMD);
         return true;
     }
 
-    // Active while taking a break. Clicking snooze button
-    // will stop taking a break and add 5 minutes to the running timer.
-    snoozeBreak() {
-        this.stop();
-        if(this.amountBreaks < 3){
-            this.breakItem.text = (3 - this.amountBreaks) + " short breaks left";
-        } else {
-            this.breakItem.text = "next break is a long break";
-        }
-        vscode.workspace.getConfiguration('workbench').update('colorTheme', userTheme, true);
-        this.millisecondsRemaining = DEFAULT_SNOOZE_DURATION;
-        breaking = false;
-        this.setState(TimerState.READY);
-        this.start();
-        return true;
-    }
-
-    // Active while taking a break. Clicking skipBreak button will stop the break, increment
-    // the amount of breaks taken, and reset the timer to 25 minutes (will not auto start the timer).
     skipBreak() {
-        this.reset();
+        if (!this.isStoppable()) { return false; }
+
+        clearTimeout(this.timeout);
+        clearInterval(this.secondInterval);
+
+        this.timeout = 0;
+        this.secondInterval = 0;
+        this.millisecondsRemaining = 0;
+        this.setState(TimerState.RUNNING, commands.PAUSE_TIMER_CMD);
+        this.millisecondsRemaining = this.breakInterval;
         breaking = false;
-        vscode.workspace.getConfiguration('workbench').update('colorTheme', userTheme, true);
-        this.setState(TimerState.READY);
-        if(this.amountBreaks < 3){
-            this.amountBreaks++;
-            if(this.amountBreaks < 3){
-                this.breakItem.text = (3 - this.amountBreaks) + " short breaks left";
-            } else {
-                this.breakItem.text = "next break is a long break";
-            }
-        } else {
-            this.amountBreaks = 0;
-            this.breakItem.text = (3 - this.amountBreaks) + " short breaks left";
-        }
         this.start();
+        return true;
+    }
+
+    snoozeBreak() {
+        breaking = false;
+        this.reset();  
+        this.start();
+        this.setState(TimerState.RUNNING, commands.PAUSE_TIMER_CMD); 
+        this.updateStatusBar();
+        this.updateStatusBar();
+
+        this.updateStatusBar();
+        this.updateStatusBar();
+        this.updateStatusBar();
+        this.updateStatusBar();
+        this.updateStatusBar();
+        this.updateStatusBar();
+        this.updateStatusBar();
+        this.updateStatusBar();
+
         return true;
     }
 
@@ -314,178 +265,5 @@ class PomodoroTimer {
         }
         this.state = TimerState.DISPOSED;
     }
-
-    async showTaskOptions() {
-        await vscode.window.showQuickPick(taskOptions).then(result => {
-            if(result != null)
-                selection = result.toString();
-        });
-    }
-
-    async showTaskList() {
-        await vscode.window.showQuickPick(taskList).then(result => {
-            if(result != null)
-                selection = result.toString();
-        });
-    }
-
-    async taskBar() {
-
-        await this.showTaskOptions();
-
-        if(selection == "Close Menu")
-            return;
-
-        if(selection == "View Tasks") {
-            await vscode.window.showQuickPick(taskList).then(result => {
-                if(result != null)
-                    selection = result.toString();
-            });
-            if(selection == "[BACK]")
-                this.taskBar();
-        }
-        else if(selection == "Add Task") {
-            userInput = await vscode.window.showInputBox();
-
-            if(userInput != null)
-                taskList.push(userInput);
-            this.taskBar();
-
-        }
-        else if(selection == "Remove Task") {
-            await vscode.window.showQuickPick(taskList).then(result => {
-            if(result != null)
-                selection = result.toString();
-            });
-
-            if(selection == "[BACK]")
-                this.taskBar();
-            else{
-                var i = 0;
-                while(taskList[i] != selection)
-                    i++;
-                completedList.push(taskList[i]);
-                taskList.splice(i, 1);
-                this.taskBar();
-            }
-        }
-        else if(selection == "Completed Tasks") {
-            await vscode.window.showQuickPick(completedList).then(result => {
-                if(result != null)
-                    selection = result.toString();
-            });
-
-            if(selection == "[BACK]")
-                this.taskBar();
-        }
-    }
-
-    async options()
-    {
-        await vscode.window.showQuickPick(optionList).then(result => {
-            if(result != null)
-                selection = result.toString();
-        });
-
-        if(selection == "Close Menu")
-            return;
-
-        if(selection == "Set Short Break Time Duration")
-        {
-            await vscode.window.showQuickPick(shortBreakOpt).then(result => {
-                if(result != null)
-                    selection = result.toString();
-            });
-
-            if(selection == "[BACK]")
-                this.options();
-            else if(selection == "0.05 Minutes")
-                DEFAULT_BREAK_DURATION = 0.05 * 60000;
-            else if(selection == "3 Minutes")
-                DEFAULT_BREAK_DURATION = 3 * 60000;
-            else if(selection == "5 Minutes")
-                DEFAULT_BREAK_DURATION = 5 * 60000;
-            else if(selection == "10 Minutes")
-                DEFAULT_BREAK_DURATION = 10 * 60000;
-
-            this.options();
-            return;
-        }
-
-        if(selection == "Set Long Break Time Duration")
-        {
-            await vscode.window.showQuickPick(longBreakOpt).then(result => {
-                if(result != null)
-                    selection = result.toString();
-            });
-
-            if(selection == "[BACK]")
-                this.options();
-            else if(selection == "0.05 Minutes")
-                DEFAULT_LONG_BREAK_DURATION = 0.05 * 60000;
-            else if(selection == "25 Minutes")
-                DEFAULT_LONG_BREAK_DURATION = 25 * 60000;
-            else if(selection == "30 Minutes")
-                DEFAULT_LONG_BREAK_DURATION = 30 * 60000;
-            else if(selection == "45 Minutes")
-                DEFAULT_LONG_BREAK_DURATION = 45 * 60000;
-            else if(selection == "1 Hour")
-                DEFAULT_LONG_BREAK_DURATION = 60 * 60000;
-
-            this.options();
-            return;
-        }
-
-        if(selection == "Set Pomodoro Time Duration")
-        {
-            await vscode.window.showQuickPick(pomoTimeOpt).then(result => {
-                if(result != null)
-                    selection = result.toString();
-            });
-
-            if(selection == "[BACK]") {
-                this.options();
-                return;
-            }
-
-            if(selection == "0.05 Minutes")
-                this.interval = 0.05 * 60000;
-            else if(selection == "20 Minutes")
-                this.interval = 20 * 60000;
-            else if(selection == "30 Minutes")
-                this.interval = 30 * 60000;
-            else if(selection == "40 Minutes")
-                this.interval = 40 * 60000;
-            else if(selection == "1 Hour")
-                this.interval = 60 * 60000;
-
-            this.reset();
-            this.options();
-            return;
-        }
-    }
-
-    // Function allows the collapsibleButton to toggle the visibility of
-    // the rest of the Pomodoro statusBar items.
-    collapsible() {
-        if(collapsed) {
-            this.optionsButton.show();
-            this.startPauseButton.show();
-            this.resetButton.show();
-            this.timerItem.show();
-            this.breakItem.show();
-            this.taskItem.show();
-            collapsed = false;
-        } else {
-            this.optionsButton.hide();
-            this.startPauseButton.hide();
-            this.resetButton.hide();
-            this.timerItem.hide();
-            this.breakItem.hide();
-            this.taskItem.hide();
-            collapsed = true;
-        }
-    }
-}
-
+};
 exports.PomodoroTimer = PomodoroTimer;
