@@ -4,9 +4,16 @@
 
 ### Updates
 
+**Version 1.0.0**
+
+Full release.
+- Collapsible Pomodoro button toggles the visibility of the status bar items on VS Code.
+- Completed task list implemented. Tasks can be added, removed, and viewed. Removed tasks are considered completed, and can be viewed in the completed tasks menu.
+- Options button and menu has been added. The menu includes the ability to change the timer durations for short breaks, long breaks, and the working timer.
+
 **Version 0.6.0**
 
-Added a task list button and the prototype for what the task list will look like when the button is clicked. Additionally, made modifications to the color theme toggle when breaks are started and ended. Now, the VS Code theme will invert its "kind" value when a break is toggled, effectively switching the theme regardless of what the user has set. This ensures that there will be a noticible difference when a theme is toggled. 
+Added a task list button and the prototype for what the task list will look like when the button is clicked. Additionally, made modifications to the color theme toggle when breaks are started and ended. Now, the VS Code theme will invert its "kind" value when a break is toggled, effectively switching the theme regardless of what the user has set. This ensures that there will be a noticible difference when a theme is toggled.
 
 **Version 0.5.1**
 
