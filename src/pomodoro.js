@@ -23,7 +23,7 @@ let completedList = ["[BACK]"];
 let optionList = ["Set Short Break Time Duration", "Set Long Break Time Duration", "Set Pomodoro Time Duration", "Close Menu"];
 let shortBreakOpt = ["[BACK]", "0.05 Minutes", "3 Minutes", "5 Minutes", "10 Minutes"];
 let longBreakOpt = ["[BACK]", "0.05 Minutes", "25 Minutes", "30 Minutes", "45 Minutes", "1 Hour"];
-let pomoTimeOpt = ["[BACK]", "0.05 Minutes", "20 Minutes", "30 Minutes", "40 Minutes"];
+let pomoTimeOpt = ["[BACK]", "0.05 Minutes", "20 Minutes", "25 Minutes", "30 Minutes", "40 Minutes"];
 
 var TimerState = {
     UNKNOWN: 0,
@@ -117,6 +117,9 @@ class PomodoroTimer {
         this.optionsButton.text = "$(settings-gear)" + " Options";
         this.optionsButton.command = commands.OPTIONS_CMD;
 
+        this.taskItem.text = "$(list-unordered)" +  " Tasks";
+        this.taskItem.command = commands.TASKS_CMD;
+
         // If timer is not on break
         if (breaking == false) {
             const icon = TimerState.RUNNING === this.state ? "$(debug-pause)" + "pause" : "$(triangle-right)" + "start";
@@ -133,9 +136,6 @@ class PomodoroTimer {
             this.resetButton.command = commands.SKIP_BREAK_CMD;
             this.timerItem.text = millisecondsToMMSS(this.millisecondsRemaining) + " (Taking a break)";
         }
-
-        this.taskItem.text = "$(list-unordered)" +  " Tasks";
-        this.taskItem.command = commands.TASKS_CMD;
     }
 
     //command setting is done in the updateStatusBar function, no need to bring a command into this.
@@ -452,6 +452,8 @@ class PomodoroTimer {
                 this.interval = 0.05 * 60000;
             else if(selection == "20 Minutes")
                 this.interval = 20 * 60000;
+            else if(selection == "25 Minutes")
+                this.interval = 25 * 60000;
             else if(selection == "30 Minutes")
                 this.interval = 30 * 60000;
             else if(selection == "40 Minutes")
@@ -470,19 +472,20 @@ class PomodoroTimer {
     collapsible() {
         if(collapsed) {
             this.optionsButton.show();
+            this.taskItem.show();
             this.startPauseButton.show();
             this.resetButton.show();
             this.timerItem.show();
             this.breakItem.show();
-            this.taskItem.show();
+
             collapsed = false;
         } else {
             this.optionsButton.hide();
+            this.taskItem.hide();
             this.startPauseButton.hide();
             this.resetButton.hide();
             this.timerItem.hide();
             this.breakItem.hide();
-            this.taskItem.hide();
             collapsed = true;
         }
     }
