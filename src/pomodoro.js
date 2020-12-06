@@ -354,19 +354,19 @@ class PomodoroTimer {
         }
         else if(selection == "Remove Task") {
             await vscode.window.showQuickPick(taskList).then(result => {
-            if(result != null)
-                selection = result.toString();
+                if(result != null)
+                    selection = result.toString();
             });
 
             if(selection == "[BACK]")
                 this.taskBar();
             else{
-                var i = 0;
-                while(taskList[i] != selection)
-                    i++;
-                completedList.push(taskList[i]);
-                taskList.splice(i, 1);
-                this.taskBar();
+                for(var i = 0; i < taskList.length; i++)
+                    if(taskList[i] == selection){
+                        completedList.push(taskList[i]);
+                        taskList.splice(i, 1);
+                        this.taskBar();
+                    }
             }
         }
         else if(selection == "Completed Tasks") {
