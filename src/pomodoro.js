@@ -163,10 +163,10 @@ class PomodoroTimer {
             //when the break duration is set you need to multiply the default second size and default millisecond size.
             if (this.amountBreaks == 3){
                 var temp = vscode.workspace.getConfiguration("pomodoro").get("long_break_interval", DEFAULT_LONG_BREAK_DURATION);
-                this.millisecondsRemaining = temp != DEFAULT_LONG_BREAK_DURATION ? temp * SECONDS_IN_MINUTE * MILLISECONDS_IN_SECOND : temp;
+                this.millisecondsRemaining = DEFAULT_LONG_BREAK_DURATION;//temp != DEFAULT_LONG_BREAK_DURATION ? temp * SECONDS_IN_MINUTE * MILLISECONDS_IN_SECOND : temp;
             } else {
                 temp = vscode.workspace.getConfiguration("pomodoro").get("short_break_interval", DEFAULT_LONG_BREAK_DURATION);
-                this.millisecondsRemaining = temp != DEFAULT_BREAK_DURATION ? temp * SECONDS_IN_MINUTE * MILLISECONDS_IN_SECOND : temp;
+                this.millisecondsRemaining = DEFAULT_BREAK_DURATION;//temp != DEFAULT_BREAK_DURATION ? temp * SECONDS_IN_MINUTE * MILLISECONDS_IN_SECOND : temp;
             }
             this.startBreak();
         };
