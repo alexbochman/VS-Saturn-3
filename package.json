@@ -2,7 +2,7 @@
 	"name": "helloworld",
 	"displayName": "VS-Saturn 3: Pomodoro Technique",
 	"description": "Pomodoro Technique extension. Learn more at https://alexbochman.github.io/SWENG_Project/VS-Saturn-3.html#",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"publisher": "UmlCs",
 	"repository": {
 		"type": "git",
@@ -27,8 +27,7 @@
 		"configuration": {
 			"type": "object",
 			"title": "Pomodoro",
-			"properties": {
-			}
+			"properties": {}
 		},
 		"commands": [
 			{
